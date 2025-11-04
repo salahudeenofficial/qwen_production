@@ -5,11 +5,20 @@ __pycache__/
 !/input/example.png
 /models/
 /temp/
-# Custom nodes: exclude everything except specific files
-custom_nodes/**
-!custom_nodes/example_node.py.example
-!custom_nodes/ComfyUI-to-Python-Extension/
-!custom_nodes/ComfyUI-to-Python-Extension/comfyui_to_python.py
+# Custom nodes: allow all custom nodes but exclude cache and unnecessary files
+custom_nodes/__pycache__/
+custom_nodes/**/__pycache__/
+custom_nodes/**/*.pyc
+custom_nodes/**/*.pyo
+custom_nodes/**/*.pyd
+custom_nodes/**/.git/
+custom_nodes/**/.git
+custom_nodes/**/.gitmodules
+custom_nodes/**/node_modules/
+custom_nodes/**/dist/
+custom_nodes/**/build/
+custom_nodes/**/.venv/
+custom_nodes/**/venv/
 # Allow workflow scripts and API files
 !workflow_script*.py
 !workflow_api*.json

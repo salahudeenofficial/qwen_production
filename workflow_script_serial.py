@@ -142,8 +142,9 @@ def main():
         vaeloader_39 = vaeloader.load_vae(vae_name="qwen_image_vae.safetensors")
 
         loadimage = LoadImage()
+        #person_image
         loadimage_78 = loadimage.load_image(
-            image="image_qwen_image_edit_2509_input_image.png"
+            image="masked_person.png"
         )
 
         imagescaletototalpixels = NODE_CLASS_MAPPINGS["ImageScaleToTotalPixels"]()
@@ -167,7 +168,7 @@ def main():
         )
 
         loadimage_106 = loadimage.load_image(
-            image="image_qwen_image_edit_2509_input_image.png"
+            image="cloth.png"
         )
 
         emptysd3latentimage = NODE_CLASS_MAPPINGS["EmptySD3LatentImage"]()
@@ -230,19 +231,19 @@ def main():
                 vae=get_value_at_index(vaeloader_39, 0),
             )
 
-            imageconcatmulti_389 = imageconcatmulti.combine(
-                inputcount=3,
-                direction="right",
-                match_image_size=False,
-                Update_inputs=None,
-                image_1=get_value_at_index(loadimage_78, 0),
-                image_2=get_value_at_index(loadimage_106, 0),
-                image_3=get_value_at_index(vaedecode_8, 0),
-            )
+            # imageconcatmulti_389 = imageconcatmulti.combine(
+            #     inputcount=3,
+            #     direction="right",
+            #     match_image_size=False,
+            #     Update_inputs=None,
+            #     image_1=get_value_at_index(loadimage_78, 0),
+            #     image_2=get_value_at_index(loadimage_106, 0),
+            #     image_3=get_value_at_index(vaedecode_8, 0),
+            # )
 
             saveimage_60 = saveimage.save_images(
                 filename_prefix="ComfyUI",
-                images=get_value_at_index(imageconcatmulti_389, 0),
+                images=get_value_at_index(vaedecode_8, 0),
             )
 
 
