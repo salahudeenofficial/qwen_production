@@ -162,7 +162,7 @@ def main():
 
         loraloadermodelonly = LoraLoaderModelOnly()
         loraloadermodelonly_89 = loraloadermodelonly.load_lora_model_only(
-            lora_name="Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors",
+            lora_name="Qwen-Image-Lightning-4steps-V2.0.safetensorss",
             strength_model=1,
             model=get_value_at_index(unetloader_37, 0),
         )
