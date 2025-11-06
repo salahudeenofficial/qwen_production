@@ -345,28 +345,43 @@ def main():
             negative=t_en_out2_for_sampler,  # Use original format for sampler
             latent_image=img1_enc_for_sampler,
         )
-        k_out = get_value_at_index(ksampler_3, 0)
+        k_out_raw = get_value_at_index(ksampler_3, 0)
         
-        # Handle dict outputs from sampler
-        if isinstance(k_out, dict):
-            if "samples" in k_out:
-                k_out = k_out["samples"]
-            elif "latent" in k_out:
-                k_out = k_out["latent"]
-            elif len(k_out) == 1:
-                k_out = list(k_out.values())[0]
+        # Keep original format for decoder (decoder expects dict with "samples" key)
+        k_out_for_decoder = k_out_raw
         
-        # Save sampling output
+        # Extract tensor for saving
+        k_out_tensor = k_out_raw
+        
+        # Handle dict outputs from sampler for saving
+        if isinstance(k_out_tensor, dict):
+            if "samples" in k_out_tensor:
+                k_out_tensor = k_out_tensor["samples"]
+            elif "latent" in k_out_tensor:
+                k_out_tensor = k_out_tensor["latent"]
+            elif len(k_out_tensor) == 1:
+                k_out_tensor = list(k_out_tensor.values())[0]
+        
+        if isinstance(k_out_tensor, (list, tuple)):
+            k_out_tensor = k_out_tensor[0]
+        
+        # Save sampling output (tensor only)
         save_tensor(
-            k_out,
+            k_out_tensor,
             str(output_dir / "sampling_output.pt"),
             "Sampling Output"
         )
 
         print("\n[5/4] Decoding - Decoding latent to image...")
+        
+        # Ensure k_out is in the format expected by decoder (dict with "samples" key)
+        if not isinstance(k_out_for_decoder, dict):
+            # Wrap tensor in dict format expected by decoder
+            k_out_for_decoder = {"samples": k_out_for_decoder}
+        
         vaedecode = VAEDecode()
         vaedecode_8 = vaedecode.decode(
-            samples=k_out,
+            samples=k_out_for_decoder,  # Use original format for decoder
             vae=get_value_at_index(vaeloader_39, 0),
         )
         decoded_image = get_value_at_index(vaedecode_8, 0)
