@@ -133,29 +133,57 @@ def extract_conditioning_tensor(conditioning_output) -> torch.Tensor:
     """Extract tensor from conditioning output format [tensor, metadata_dict]."""
     # Conditioning format is typically: [tensor, metadata_dict] or just [tensor]
     if isinstance(conditioning_output, (list, tuple)):
-        if len(conditioning_output) > 0:
-            # Extract the actual tensor from the conditioning format
-            if isinstance(conditioning_output[0], torch.Tensor):
-                return conditioning_output[0]
-            elif isinstance(conditioning_output[0], dict):
+        if len(conditioning_output) == 0:
+            raise EncodingFailedError("Conditioning output is an empty list/tuple")
+        
+        # Try to find tensor in the list
+        for item in conditioning_output:
+            if isinstance(item, torch.Tensor):
+                return item
+            elif isinstance(item, dict):
                 # If it's a dict, try to extract tensor from it
-                if "cond" in conditioning_output[0]:
-                    return conditioning_output[0]["cond"]
-                elif len(conditioning_output[0]) == 1:
-                    return list(conditioning_output[0].values())[0]
+                if "cond" in item:
+                    tensor = item["cond"]
+                    if isinstance(tensor, torch.Tensor):
+                        return tensor
+                # Try to find any tensor value in the dict
+                for value in item.values():
+                    if isinstance(value, torch.Tensor):
+                        return value
+            elif isinstance(item, (list, tuple)):
+                # Recursively check nested lists
+                try:
+                    return extract_conditioning_tensor(item)
+                except EncodingFailedError:
+                    continue
+        
+        # If we get here, no tensor was found in the list
+        raise EncodingFailedError(f"Could not find tensor in conditioning output list: {type(conditioning_output[0])}")
     
     # If it's a dict directly
     if isinstance(conditioning_output, dict):
         if "cond" in conditioning_output:
-            return conditioning_output["cond"]
-        elif len(conditioning_output) == 1:
-            return list(conditioning_output.values())[0]
+            tensor = conditioning_output["cond"]
+            if isinstance(tensor, torch.Tensor):
+                return tensor
+            # If cond is not a tensor, try to extract from it
+            return extract_conditioning_tensor(tensor)
+        # Try to find any tensor value in the dict
+        for value in conditioning_output.values():
+            if isinstance(value, torch.Tensor):
+                return value
+            elif isinstance(value, (list, tuple, dict)):
+                try:
+                    return extract_conditioning_tensor(value)
+                except EncodingFailedError:
+                    continue
+        raise EncodingFailedError(f"Could not find tensor in conditioning output dict")
     
     # If it's already a tensor
     if isinstance(conditioning_output, torch.Tensor):
         return conditioning_output
     
-    raise EncodingFailedError(f"Could not extract tensor from conditioning output: {type(conditioning_output)}")
+    raise EncodingFailedError(f"Could not extract tensor from conditioning output: {type(conditioning_output)}, value: {conditioning_output}")
 
 
 def encode_text_and_images(
