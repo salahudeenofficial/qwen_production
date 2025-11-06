@@ -133,13 +133,33 @@ def encode_image_to_latent(
         output_dir = Config.output_dir
     
     try:
-        # Validate inputs
+        # Validate inputs - resolve to absolute path
         image_path_obj = Path(image_path)
+        
+        # If relative path, try to resolve it relative to current working directory first
+        if not image_path_obj.is_absolute():
+            # Try current directory
+            if not image_path_obj.exists():
+                # Try relative to microservice directory
+                microservice_dir = Path(__file__).parent
+                alt_path = microservice_dir / image_path
+                if alt_path.exists():
+                    image_path_obj = alt_path
+                # Try relative to parent ComfyUI directory
+                elif (microservice_dir.parent.parent / image_path).exists():
+                    image_path_obj = microservice_dir.parent.parent / image_path
+                # Try input directory
+                elif (microservice_dir.parent.parent / "input" / image_path_obj.name).exists():
+                    image_path_obj = microservice_dir.parent.parent / "input" / image_path_obj.name
+        
+        # Resolve to absolute path
+        image_path_obj = image_path_obj.resolve()
+        
         if not image_path_obj.exists():
-            raise ImageNotFoundError(f"Image file not found: {image_path}")
+            raise ImageNotFoundError(f"Image file not found: {image_path} (resolved to: {image_path_obj})")
         
         if not image_path_obj.is_file():
-            raise ImageNotFoundError(f"Path is not a file: {image_path}")
+            raise ImageNotFoundError(f"Path is not a file: {image_path_obj}")
         
         # Setup ComfyUI
         setup_comfyui()
