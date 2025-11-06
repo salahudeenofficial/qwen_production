@@ -203,7 +203,24 @@ def encode_image_to_latent(
             pixels=scaled_image,
             vae=vae,
         )
-        latent = get_value_at_index(encoded_output, 0)
+        latent_raw = get_value_at_index(encoded_output, 0)
+        
+        # Extract tensor from latent output (might be dict with "samples" key)
+        latent = latent_raw
+        if isinstance(latent, dict):
+            if "samples" in latent:
+                latent = latent["samples"]
+            elif "latent" in latent:
+                latent = latent["latent"]
+            elif len(latent) == 1:
+                latent = list(latent.values())[0]
+        
+        if isinstance(latent, (list, tuple)):
+            latent = latent[0]
+        
+        # Ensure it's a tensor
+        if not isinstance(latent, torch.Tensor):
+            raise EncodingFailedError(f"Expected tensor, got {type(latent)}: {latent}")
         
         # Get latent shape
         latent_shape = list(latent.shape) if hasattr(latent, 'shape') else None
