@@ -248,44 +248,61 @@ def main():
             )
         )
         
-        t_en_out1 = get_value_at_index(textencodeqwenimageeditplus_111, 0)
-        t_en_out2 = get_value_at_index(textencodeqwenimageeditplus_110, 0)
+        t_en_out1_raw = get_value_at_index(textencodeqwenimageeditplus_111, 0)
+        t_en_out2_raw = get_value_at_index(textencodeqwenimageeditplus_110, 0)
         
-        # Handle dict/list outputs from text encoder
-        if isinstance(t_en_out1, dict):
-            if "cond" in t_en_out1:
-                t_en_out1 = t_en_out1["cond"]
-            elif len(t_en_out1) == 1:
-                t_en_out1 = list(t_en_out1.values())[0]
+        # Keep original format for sampler (sampler expects list/tuple format)
+        t_en_out1_for_sampler = t_en_out1_raw
+        t_en_out2_for_sampler = t_en_out2_raw
         
-        if isinstance(t_en_out1, (list, tuple)):
-            if len(t_en_out1) > 0:
-                t_en_out1 = t_en_out1[0]
-                # If still a dict, extract further
-                if isinstance(t_en_out1, dict) and "cond" in t_en_out1:
-                    t_en_out1 = t_en_out1["cond"]
+        # Extract tensors for saving
+        t_en_out1_tensor = t_en_out1_raw
+        t_en_out2_tensor = t_en_out2_raw
         
-        if isinstance(t_en_out2, dict):
-            if "cond" in t_en_out2:
-                t_en_out2 = t_en_out2["cond"]
-            elif len(t_en_out2) == 1:
-                t_en_out2 = list(t_en_out2.values())[0]
+        # Handle dict/list outputs from text encoder for saving
+        if isinstance(t_en_out1_tensor, dict):
+            if "cond" in t_en_out1_tensor:
+                t_en_out1_tensor = t_en_out1_tensor["cond"]
+            elif len(t_en_out1_tensor) == 1:
+                t_en_out1_tensor = list(t_en_out1_tensor.values())[0]
         
-        if isinstance(t_en_out2, (list, tuple)):
-            if len(t_en_out2) > 0:
-                t_en_out2 = t_en_out2[0]
-                # If still a dict, extract further
-                if isinstance(t_en_out2, dict) and "cond" in t_en_out2:
-                    t_en_out2 = t_en_out2["cond"]
+        if isinstance(t_en_out1_tensor, (list, tuple)):
+            if len(t_en_out1_tensor) > 0:
+                # Extract the actual tensor from the conditioning format
+                # Format is usually: [tensor, dict_with_metadata] or just [tensor]
+                if isinstance(t_en_out1_tensor[0], torch.Tensor):
+                    t_en_out1_tensor = t_en_out1_tensor[0]
+                else:
+                    t_en_out1_tensor = t_en_out1_tensor[0]
+                    # If still a dict, extract further
+                    if isinstance(t_en_out1_tensor, dict) and "cond" in t_en_out1_tensor:
+                        t_en_out1_tensor = t_en_out1_tensor["cond"]
         
-        # Save text encoder outputs
+        if isinstance(t_en_out2_tensor, dict):
+            if "cond" in t_en_out2_tensor:
+                t_en_out2_tensor = t_en_out2_tensor["cond"]
+            elif len(t_en_out2_tensor) == 1:
+                t_en_out2_tensor = list(t_en_out2_tensor.values())[0]
+        
+        if isinstance(t_en_out2_tensor, (list, tuple)):
+            if len(t_en_out2_tensor) > 0:
+                # Extract the actual tensor from the conditioning format
+                if isinstance(t_en_out2_tensor[0], torch.Tensor):
+                    t_en_out2_tensor = t_en_out2_tensor[0]
+                else:
+                    t_en_out2_tensor = t_en_out2_tensor[0]
+                    # If still a dict, extract further
+                    if isinstance(t_en_out2_tensor, dict) and "cond" in t_en_out2_tensor:
+                        t_en_out2_tensor = t_en_out2_tensor["cond"]
+        
+        # Save text encoder outputs (tensors only)
         save_tensor(
-            t_en_out1,
+            t_en_out1_tensor,
             str(output_dir / "text_encoder_positive_output.pt"),
             "Text Encoder Positive Output"
         )
         save_tensor(
-            t_en_out2,
+            t_en_out2_tensor,
             str(output_dir / "text_encoder_negative_output.pt"),
             "Text Encoder Negative Output"
         )
@@ -324,8 +341,8 @@ def main():
             scheduler="simple",
             denoise=1,
             model=get_value_at_index(cfgnorm_75, 0),
-            positive=t_en_out1,
-            negative=t_en_out2,
+            positive=t_en_out1_for_sampler,  # Use original format for sampler
+            negative=t_en_out2_for_sampler,  # Use original format for sampler
             latent_image=img1_enc_for_sampler,
         )
         k_out = get_value_at_index(ksampler_3, 0)
