@@ -156,7 +156,9 @@ def save_image_tensor(
         raise InvalidImageFormatError(f"Expected image tensor shape [H, W, C], got {image_tensor.shape}")
     
     # Convert to numpy and normalize to [0, 255]
-    image_np = image_tensor.cpu().numpy()
+    # Detach from computation graph if tensor requires grad
+    image_tensor_detached = image_tensor.detach() if image_tensor.requires_grad else image_tensor
+    image_np = image_tensor_detached.cpu().numpy()
     
     # Normalize based on value range
     if image_np.min() < 0:
@@ -357,7 +359,8 @@ def decode_latent_to_image(
         }
         
         # Always include tensor in result (for testing/comparison)
-        result["image_tensor"] = image_tensor
+        # Detach from computation graph to avoid gradient issues
+        result["image_tensor"] = image_tensor.detach() if image_tensor.requires_grad else image_tensor
         
         return result
         
