@@ -27,3 +27,8 @@ kornia>=0.7.1
 spandrel
 pydantic~=2.0
 pydantic-settings~=2.0
+
+# FastAPI dependencies for Qwen API
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
