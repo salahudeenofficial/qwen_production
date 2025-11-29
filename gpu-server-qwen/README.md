@@ -81,7 +81,12 @@ pip install -r requirements.txt
 
 4. Run the server:
 ```bash
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+python run_server.py
+```
+
+Or using uvicorn directly:
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 ## Docker
