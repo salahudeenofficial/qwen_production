@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional
 
 # Configuration
-GPU_SERVER_URL = "http://localhost:8000"  # Update with your Vast AI instance URL
+GPU_SERVER_URL = "http://108.231.141.46:17857"  # Vast AI instance URL
 INTERNAL_AUTH_TOKEN = "TEST_BRIDGE_TO_GPU_SECRET"  # Must match config.yaml
 
 # Test images
@@ -201,17 +201,34 @@ def test_unauthorized():
     print("="*60)
     
     try:
-        response = requests.post(
-            f"{GPU_SERVER_URL}/tryon",
-            data={"job_id": "test_unauth"},
-            timeout=10
-        )
+        # Send minimal valid data so FastAPI validation passes
+        # Then auth check will run and return 401
+        with open(MASKED_PERSON_IMAGE, "rb") as f1, open(GARMENT_IMAGE, "rb") as f2:
+            files = {
+                "masked_user_image": ("person.png", f1, "image/png"),
+                "garment_image": ("cloth.png", f2, "image/png")
+            }
+            data = {
+                "job_id": "test_unauth",
+                "user_id": "test_user",
+                "session_id": "test_session",
+                "provider": "qwen"
+            }
+            # No X-Internal-Auth header - should get 401
+            response = requests.post(
+                f"{GPU_SERVER_URL}/tryon",
+                data=data,
+                files=files,
+                timeout=10
+            )
         print(f"Status: {response.status_code}")
         if response.status_code == 401:
             print("✅ Correctly rejected unauthorized request")
             return True
         else:
             print(f"❌ Expected 401, got {response.status_code}")
+            if response.status_code == 422:
+                print("   (FastAPI validation ran before auth check)")
             return False
     except Exception as e:
         print(f"Error: {e}")
